@@ -1,9 +1,9 @@
-// bind roughness   {label:"Roughness", default:0.25, min:0.001, max:1, step:0.001}
-// bind dcolor      {label:"Diffuse Color",  r:1.0, g:1.0, b:1.0}
-// bind scolor      {label:"Specular Color", r:0.23, g:0.23, b:0.23}
-// bind intensity   {label:"Light Intensity", default:4, min:0, max:10}
-// bind width       {label:"Width",  default: 8, min:0.1, max:15, step:0.1}
-// bind height      {label:"Height", default: 8, min:0.1, max:15, step:0.1}
+// bind roughness   {label:"Roughness", default:0.2, min:0.001, max:1, step:0.001}
+// bind dcolor      {label:"Diffuse Color",  r:0.0, g:0.0, b:0.0}
+// bind scolor      {label:"Specular Color", r:1.0, g:1.0, b:1.0}
+// bind intensity   {label:"Light Intensity", default:10, min:0, max:10}
+// bind width       {label:"Width",  default: 50, min:0.1, max:50, step:0.1}
+// bind height      {label:"Height", default: 50, min:0.1, max:50, step:0.1}
 // bind roty        {label:"Rotation Y", default: 0, min:0, max:1, step:0.001}
 // bind rotz        {label:"Rotation Z", default: 0, min:0, max:1, step:0.001}
 // bind twoSided    {label:"Two-sided", default:false}
@@ -62,6 +62,20 @@ float RayPlaneIntersect(Ray ray, vec4 plane)
 {
     float t = -dot(plane, vec4(ray.origin, 1.0))/dot(plane.xyz, ray.dir);
     return (t > 0.0) ? t : NO_HIT;
+}
+
+float RaySphereIntersect(Ray ray, vec4 sphere) {
+    if (length(ray.origin - sphere.xyz) <= sphere.w)
+        return NO_HIT;
+
+    float a = dot(ray.dir, ray.dir);
+    vec3 s0_r0 = ray.origin - sphere.xyz;
+    float b = 2.0 * dot(ray.dir, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sphere.w * sphere.w);
+    if (b*b - 4.0*a*c < 0.0) {
+        return NO_HIT;
+    }
+    return (-b - sqrt((b*b) - 4.0*a*c))/(2.0*a);
 }
 
 float sqr(float x) { return x*x; }
@@ -543,7 +557,10 @@ void main()
 
     Ray ray = GenerateCameraRay();
 
-    float dist = RayPlaneIntersect(ray, floorPlane);
+    // float dist = RayPlaneIntersect(ray, floorPlane);
+
+    vec4 sphere = vec4(0,6,-2, 1.5);
+    float dist = RaySphereIntersect(ray, sphere);
 
     vec2 seq[NUM_SAMPLES];
     Halton2D(seq, sampleCount);
@@ -561,7 +578,8 @@ void main()
 
         vec3 pos = ray.origin + dist*ray.dir;
 
-        vec3 N = floorPlane.xyz;
+        // vec3 N = floorPlane.xyz;
+        vec3 N = normalize(pos - sphere.xyz);
         vec3 V = -ray.dir;
 
         float ndotv = saturate(dot(N, V));
