@@ -6,6 +6,8 @@
 // bind height      {label:"Height", default: 50, min:0.1, max:50, step:0.1}
 // bind roty        {label:"Rotation Y", default: 0, min:0, max:1, step:0.001}
 // bind rotz        {label:"Rotation Z", default: 0, min:0, max:1, step:0.001}
+// bind sphereXPos        {label:"Sphere X-Pos", default: 0, min:-10, max:10, step:0.001}
+// bind sphereYPos        {label:"Sphere Y-Pos", default: 0, min:-10, max:10, step:0.001}
 // bind twoSided    {label:"Two-sided", default:false}
 // bind groundTruth {label:"Ground Truth", default:false}
 
@@ -18,6 +20,9 @@ uniform float width;
 uniform float height;
 uniform float roty;
 uniform float rotz;
+
+uniform float sphereXPos;
+uniform float sphereYPos;
 
 uniform bool groundTruth;
 
@@ -64,18 +69,53 @@ float RayPlaneIntersect(Ray ray, vec4 plane)
     return (t > 0.0) ? t : NO_HIT;
 }
 
-float RaySphereIntersect(Ray ray, vec4 sphere) {
-    if (length(ray.origin - sphere.xyz) <= sphere.w)
+// float RaySphereIntersect(Ray ray, vec4 sphere) {
+//     if (length(ray.origin - sphere.xyz) <= sphere.w)
+//         return NO_HIT;
+
+//     float a = dot(ray.dir, ray.dir);
+//     vec3 s0_r0 = ray.origin - sphere.xyz;
+//     float b = 2.0 * dot(ray.dir, s0_r0);
+//     float c = dot(s0_r0, s0_r0) - (sphere.w * sphere.w);
+//     if (b*b - 4.0*a*c < 0.0) {
+//         return NO_HIT;
+//     }
+//     return (-b - sqrt((b*b) - 4.0*a*c))/(2.0*a);
+// }
+
+float RaySphereIntersect(Ray ray, vec4 sphere)
+{
+    vec3 oc = ray.origin - sphere.xyz;
+    float b = 2.0 * dot(ray.dir, oc);
+    float c = dot(oc, oc) - sphere.w*sphere.w;
+    float disc = b * b - 4.0 * c;
+
+    if (disc < 0.0)
         return NO_HIT;
 
-    float a = dot(ray.dir, ray.dir);
-    vec3 s0_r0 = ray.origin - sphere.xyz;
-    float b = 2.0 * dot(ray.dir, s0_r0);
-    float c = dot(s0_r0, s0_r0) - (sphere.w * sphere.w);
-    if (b*b - 4.0*a*c < 0.0) {
-        return NO_HIT;
+    float q;
+    if (b < 0.0)
+        q = (-b - sqrt(disc))/2.0;
+    else
+        q = (-b + sqrt(disc))/2.0;
+
+    float t0 = q;
+    float t1 = c / q;
+
+    if (t0 > t1) {
+        float temp = t0;
+        t0 = t1;
+        t1 = temp;
     }
-    return (-b - sqrt((b*b) - 4.0*a*c))/(2.0*a);
+
+    if (t1 < 0.0)
+        return NO_HIT;
+
+    if (t0 < 0.0) {
+        return t1;
+    } else {
+        return t0;
+    }
 }
 
 float sqr(float x) { return x*x; }
@@ -559,7 +599,7 @@ void main()
 
     // float dist = RayPlaneIntersect(ray, floorPlane);
 
-    vec4 sphere = vec4(0,6,-2, 1.5);
+    vec4 sphere = vec4(sphereXPos,sphereYPos,-2, 1.5);
     float dist = RaySphereIntersect(ray, sphere);
 
     vec2 seq[NUM_SAMPLES];

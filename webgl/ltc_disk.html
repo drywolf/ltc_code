@@ -620,7 +620,7 @@ function draw() {
 
     // Add in camera controller's rotation
     view.loadIdentity();
-    view.translate(0, 12, 0.1*g_zoom - 12.5);
+    view.translate(0, 0, 0.1*g_zoom - 12.5);
     view.rotate(controller.xRot - 10.0, 1, 0, 0);
     view.rotate(controller.yRot, 0, 1, 0);;
 
